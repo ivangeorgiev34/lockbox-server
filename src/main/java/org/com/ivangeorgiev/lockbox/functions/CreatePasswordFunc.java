@@ -1,9 +1,5 @@
 package org.com.ivangeorgiev.lockbox.functions;
 
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
@@ -13,13 +9,21 @@ import com.azure.security.keyvault.keys.cryptography.CryptographyClient;
 import com.azure.security.keyvault.keys.cryptography.models.EncryptResult;
 import com.azure.security.keyvault.keys.cryptography.models.EncryptionAlgorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.microsoft.azure.functions.annotation.*;
 import com.microsoft.azure.functions.*;
+import com.microsoft.azure.functions.annotation.AuthorizationLevel;
+import com.microsoft.azure.functions.annotation.FunctionName;
+import com.microsoft.azure.functions.annotation.HttpTrigger;
 import org.com.ivangeorgiev.lockbox.factory.CosmosDbFactory;
 import org.com.ivangeorgiev.lockbox.factory.CryptographyClientFactory;
 import org.com.ivangeorgiev.lockbox.models.Password;
 import org.com.ivangeorgiev.lockbox.utils.KeyVaultSettings;
 import org.com.ivangeorgiev.lockbox.utils.SettingConstants;
+
+import java.util.Base64;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CreatePasswordFunc {
 
@@ -43,7 +47,7 @@ public class CreatePasswordFunc {
             HttpRequestMessage<Optional<String>> request,
             final ExecutionContext context) {
 
-        if(!request.getBody().isPresent()) {
+        if (!request.getBody().isPresent()) {
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST).body("No body provided!").build();
         }
 
@@ -57,9 +61,9 @@ public class CreatePasswordFunc {
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST).body(ex.getMessage()).build();
         }
 
-        if((password.getPassword() == null || password.getPassword().isEmpty())
+        if ((password.getPassword() == null || password.getPassword().isEmpty())
                 || (password.getEmail() == null || password.getEmail().isEmpty())
-                || (password.getTitle() == null || password.getTitle().isEmpty())){
+                || (password.getTitle() == null || password.getTitle().isEmpty())) {
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST).body("Missing fields!").build();
         }
 
@@ -67,7 +71,8 @@ public class CreatePasswordFunc {
         Pattern pattern = Pattern.compile(emailRegex);
         Matcher matcher = pattern.matcher(password.getEmail());
 
-        if(!matcher.matches()) return request.createResponseBuilder(HttpStatus.BAD_REQUEST).body("Invalid email format!").build();
+        if (!matcher.matches())
+            return request.createResponseBuilder(HttpStatus.BAD_REQUEST).body("Invalid email format!").build();
 
         CryptographyClient cryptoClient = CryptographyClientFactory.create(KeyVaultSettings.getInstance().getKeyId());
 
@@ -84,7 +89,8 @@ public class CreatePasswordFunc {
                 .setConsistencyLevel(ConsistencyLevel.EVENTUAL);
         CosmosItemResponse<Password> itemResponse = container.createItem(password, partitionKey, opt);
 
-        if(itemResponse.getStatusCode() != 201) return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR).body("Password could not be created").build();
+        if (itemResponse.getStatusCode() != 201)
+            return request.createResponseBuilder(HttpStatus.valueOf(itemResponse.getStatusCode())).body("Password could not be created").build();
 
         return request.createResponseBuilder(HttpStatus.CREATED).body(password).build();
     }
