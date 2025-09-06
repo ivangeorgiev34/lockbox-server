@@ -81,13 +81,16 @@ public class CreatePasswordFunc {
         password.setId(UUID.randomUUID().toString());
         password.setPassword(Base64.getEncoder().encodeToString(res.getCipherText()));
 
-        CosmosDbFactory factory = new CosmosDbFactory(cosmosDbEndpoint, cosmosDbKey);
-        CosmosContainer container = factory.getContainer(cosmosDbName, cosmosDbContainerName);
+        CosmosItemResponse<Password> itemResponse;
+        try (CosmosDbFactory factory = new CosmosDbFactory(cosmosDbEndpoint, cosmosDbKey)
+        ) {
+            CosmosContainer container = factory.getContainer(cosmosDbName, cosmosDbContainerName);
 
-        PartitionKey partitionKey = new PartitionKey(cosmosDbPartitionKey);
-        CosmosItemRequestOptions opt = new CosmosItemRequestOptions()
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL);
-        CosmosItemResponse<Password> itemResponse = container.createItem(password, partitionKey, opt);
+            PartitionKey partitionKey = new PartitionKey(cosmosDbPartitionKey);
+            CosmosItemRequestOptions opt = new CosmosItemRequestOptions()
+                    .setConsistencyLevel(ConsistencyLevel.EVENTUAL);
+            itemResponse = container.createItem(password, partitionKey, opt);
+        }
 
         if (itemResponse.getStatusCode() != 201)
             return request.createResponseBuilder(HttpStatus.valueOf(itemResponse.getStatusCode())).body("Password could not be created").build();
