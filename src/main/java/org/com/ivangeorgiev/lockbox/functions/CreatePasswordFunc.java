@@ -92,7 +92,7 @@ public class CreatePasswordFunc {
             itemResponse = container.createItem(password, partitionKey, opt);
         }
 
-        if (itemResponse.getStatusCode() != 201)
+        if (itemResponse.getStatusCode() != HttpStatus.CREATED.value())
             return request.createResponseBuilder(HttpStatus.valueOf(itemResponse.getStatusCode())).body("Password could not be created").build();
 
         return request.createResponseBuilder(HttpStatus.CREATED).body(password).build();
