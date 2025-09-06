@@ -1,5 +1,7 @@
 package org.com.ivangeorgiev.lockbox.utils;
 
+import com.azure.security.keyvault.keys.cryptography.models.EncryptionAlgorithm;
+
 public class KeyVaultSettings {
 
     private static KeyVaultSettings instance;
@@ -46,5 +48,9 @@ public class KeyVaultSettings {
 
     public String getKeyId() {
         return String.join("/", keyVaultUrl, "keys", keyName, keyVersion);
+    }
+
+    public EncryptionAlgorithm getEncryptionAlgorithm() {
+        return EncryptionAlgorithm.RSA_OAEP;
     }
 }

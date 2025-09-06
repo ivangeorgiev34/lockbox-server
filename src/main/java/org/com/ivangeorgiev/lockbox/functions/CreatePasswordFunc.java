@@ -7,7 +7,6 @@ import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.security.keyvault.keys.cryptography.CryptographyClient;
 import com.azure.security.keyvault.keys.cryptography.models.EncryptResult;
-import com.azure.security.keyvault.keys.cryptography.models.EncryptionAlgorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.*;
 import com.microsoft.azure.functions.annotation.AuthorizationLevel;
@@ -76,7 +75,7 @@ public class CreatePasswordFunc {
 
         CryptographyClient cryptoClient = CryptographyClientFactory.create(KeyVaultSettings.getInstance().getKeyId());
 
-        EncryptResult res = cryptoClient.encrypt(EncryptionAlgorithm.RSA_OAEP, password.getPassword().getBytes());
+        EncryptResult res = cryptoClient.encrypt(KeyVaultSettings.getInstance().getEncryptionAlgorithm(), password.getPassword().getBytes());
 
         password.setId(UUID.randomUUID().toString());
         password.setPassword(Base64.getEncoder().encodeToString(res.getCipherText()));
