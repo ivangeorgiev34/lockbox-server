@@ -38,3 +38,4 @@ local.settings.json
 bin/
 obj/
 .azure/
+Azure.Functions.Cli*/
