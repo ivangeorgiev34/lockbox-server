@@ -5,6 +5,7 @@ import org.com.ivangeorgiev.lockbox.utils.SettingConstants;
 public class Password {
     private String id;
     private String title;
+    private String username;
     private String email;
     private String password;
     private String partitionKey;
@@ -27,6 +28,14 @@ public class Password {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getEmail() {

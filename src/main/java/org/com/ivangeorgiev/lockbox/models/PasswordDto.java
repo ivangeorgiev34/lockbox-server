@@ -1,10 +1,9 @@
 package org.com.ivangeorgiev.lockbox.models;
 
-import org.com.ivangeorgiev.lockbox.utils.SettingConstants;
-
 public class PasswordDto {
     private String id;
     private String title;
+    private String username;
     private String email;
     private String password;
 
@@ -22,6 +21,14 @@ public class PasswordDto {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getEmail() {
