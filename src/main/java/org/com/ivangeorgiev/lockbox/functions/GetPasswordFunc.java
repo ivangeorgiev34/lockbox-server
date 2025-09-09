@@ -12,9 +12,9 @@ import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import org.com.ivangeorgiev.lockbox.factory.CosmosDbFactory;
 import org.com.ivangeorgiev.lockbox.factory.CryptographyClientFactory;
-import org.com.ivangeorgiev.lockbox.models.ApiResponseMessage;
 import org.com.ivangeorgiev.lockbox.models.PasswordDto;
 import org.com.ivangeorgiev.lockbox.utils.CosmosDbSettings;
+import org.com.ivangeorgiev.lockbox.utils.HttpResponseMessageFactory;
 import org.com.ivangeorgiev.lockbox.utils.KeyVaultSettings;
 
 import java.nio.charset.StandardCharsets;
@@ -31,10 +31,7 @@ public class GetPasswordFunc {
         String passwordId = request.getQueryParameters().get("id");
 
         if (passwordId == null || passwordId.isEmpty())
-            return request
-                    .createResponseBuilder(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponseMessage<>(false, "Please provide password id", null))
-                    .build();
+            return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, "Please provide password id", null);
 
         CosmosItemResponse<PasswordDto> itemResponse;
         try (CosmosDbFactory factory = new CosmosDbFactory(CosmosDbSettings.getInstance().getEndpoint(), CosmosDbSettings.getInstance().getKey())) {
@@ -44,18 +41,12 @@ public class GetPasswordFunc {
             try {
                 itemResponse = container.readItem(passwordId, new PartitionKey(CosmosDbSettings.getInstance().getPartitionKey()), PasswordDto.class);
             } catch (NotFoundException ex) {
-                return request
-                        .createResponseBuilder(HttpStatus.valueOf(HttpStatus.NOT_FOUND.value()))
-                        .body(new ApiResponseMessage<>(false, "Item with such id could not be found", null))
-                        .build();
+                return HttpResponseMessageFactory.create(request, HttpStatus.NOT_FOUND, false, "Item with such id could not be found", null);
             }
         }
 
         if (itemResponse.getStatusCode() != HttpStatus.OK.value())
-            return request
-                    .createResponseBuilder(HttpStatus.valueOf(itemResponse.getStatusCode()))
-                    .body(new ApiResponseMessage<>(false, "Item with such id could not be found", null))
-                    .build();
+            return HttpResponseMessageFactory.create(request, HttpStatus.valueOf(itemResponse.getStatusCode()), false, "Item with such id could not be found", null);
 
         CryptographyClient cryptoClient = CryptographyClientFactory.create(KeyVaultSettings.getInstance().getKeyId());
 
@@ -64,7 +55,6 @@ public class GetPasswordFunc {
         DecryptResult decryptRes = cryptoClient.decrypt(KeyVaultSettings.getInstance().getEncryptionAlgorithm(), Base64.getDecoder().decode(password.getPassword()));
         password.setPassword(new String(decryptRes.getPlainText(), StandardCharsets.UTF_8));
 
-        ApiResponseMessage<PasswordDto> apiResponse = new ApiResponseMessage<PasswordDto>(true, "Password created successfully", password);
-        return request.createResponseBuilder(HttpStatus.OK).body(apiResponse).build();
+        return HttpResponseMessageFactory.create(request, HttpStatus.OK, true, "Password retrieved", password);
     }
 }
