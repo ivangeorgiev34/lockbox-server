@@ -6,6 +6,7 @@ import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import org.com.ivangeorgiev.lockbox.models.PasswordDto;
 import org.com.ivangeorgiev.lockbox.services.PasswordService;
+import org.com.ivangeorgiev.lockbox.utils.HttpResponseMessageFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +19,6 @@ public class GetAllPasswordsFunc {
         PasswordService service = new PasswordService();
         List<PasswordDto> passwords = service.getAll();
 
-        return request.createResponseBuilder(HttpStatus.OK).body(passwords).build();
+        return HttpResponseMessageFactory.create(request, HttpStatus.OK, true, "Passwords retrieved", passwords);
     }
 }
