@@ -53,6 +53,6 @@ public class CreatePasswordFunc {
         if (itemResponse.getStatusCode() != HttpStatus.CREATED.value())
             return HttpResponseMessageFactory.create(request, HttpStatus.valueOf(itemResponse.getStatusCode()), false, "Password could not be created", null);
 
-        return HttpResponseMessageFactory.create(request, HttpStatus.CREATED, true, "Password created successfully", password);
+        return HttpResponseMessageFactory.create(request, HttpStatus.CREATED, true, "Password created successfully", itemResponse.getItem());
     }
 }

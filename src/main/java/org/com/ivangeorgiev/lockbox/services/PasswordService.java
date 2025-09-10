@@ -39,7 +39,8 @@ public class PasswordService {
 
             PartitionKey partitionKey = new PartitionKey(CosmosDbSettings.getInstance().getPartitionKey());
             CosmosItemRequestOptions opt = new CosmosItemRequestOptions()
-                    .setConsistencyLevel(ConsistencyLevel.EVENTUAL);
+                    .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                    .setContentResponseOnWriteEnabled(true);
             itemResponse = container.createItem(password, partitionKey, opt);
         }
 
@@ -74,5 +75,17 @@ public class PasswordService {
 
         return passwords;
     }
+
+//    public CosmosItemResponse delete(String id) {
+//        try (CosmosDbFactory factory = new CosmosDbFactory(CosmosDbSettings.getInstance().getEndpoint(), CosmosDbSettings.getInstance().getKey())) {
+//
+//            CosmosContainer container = factory.getContainer(CosmosDbSettings.getInstance().getDatabaseName(), CosmosDbSettings.getInstance().getContainerName());
+//
+//            CosmosItemRequestOptions opt = new CosmosItemRequestOptions()
+//                    .
+//            container.deleteItem(UUID.fromString(id), new PartitionKey(CosmosDbSettings.getInstance().getPartitionKey()),)
+//
+//        }
+//    }
 }
 
