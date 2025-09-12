@@ -1,17 +1,23 @@
 package org.com.ivangeorgiev.lockbox.functions;
 
 import com.azure.cosmos.models.CosmosItemResponse;
+import com.azure.security.keyvault.keys.cryptography.CryptographyClient;
+import com.azure.security.keyvault.keys.cryptography.models.DecryptResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.*;
 import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
+import org.com.ivangeorgiev.lockbox.factory.CryptographyClientFactory;
 import org.com.ivangeorgiev.lockbox.models.Password;
 import org.com.ivangeorgiev.lockbox.models.PasswordDto;
 import org.com.ivangeorgiev.lockbox.services.PasswordService;
 import org.com.ivangeorgiev.lockbox.utils.HttpResponseMessageFactory;
+import org.com.ivangeorgiev.lockbox.utils.KeyVaultSettings;
 import org.com.ivangeorgiev.lockbox.utils.PasswordValidator;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Optional;
 
 public class CreatePasswordFunc {
@@ -40,7 +46,7 @@ public class CreatePasswordFunc {
                 || (password.getTitle() == null || password.getTitle().isEmpty()))
             return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, "Missing parameters!", null);
 
-        if (PasswordValidator.validateEmail(password.getEmail()))
+        if (!PasswordValidator.validateEmail(password.getEmail()))
             return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, "Invalid email format!", null);
 
         PasswordService service = new PasswordService();
@@ -49,12 +55,13 @@ public class CreatePasswordFunc {
         if (itemResponse.getStatusCode() != HttpStatus.CREATED.value())
             return HttpResponseMessageFactory.create(request, HttpStatus.valueOf(itemResponse.getStatusCode()), false, "Password could not be created", null);
 
-        PasswordDto dto;
-        try {
-            dto = mapper.convertValue(itemResponse.getItem(), PasswordDto.class);
-        } catch (Exception ex) {
-            return HttpResponseMessageFactory.create(request, HttpStatus.INTERNAL_SERVER_ERROR, false, ex.getMessage(), null);
-        }
+        Password passwordItemResponse = itemResponse.getItem();
+
+        CryptographyClient cryptoClient = CryptographyClientFactory.create(KeyVaultSettings.getInstance().getKeyId());
+        DecryptResult res = cryptoClient.decrypt(KeyVaultSettings.getInstance().getEncryptionAlgorithm(), Base64.getDecoder().decode(passwordItemResponse.getPassword()));
+        passwordItemResponse.setPassword(new String(res.getPlainText(), StandardCharsets.UTF_8));
+
+        PasswordDto dto = mapper.convertValue(passwordItemResponse, PasswordDto.class);
 
         return HttpResponseMessageFactory.create(request, HttpStatus.CREATED, true, "Password created successfully", dto);
     }
