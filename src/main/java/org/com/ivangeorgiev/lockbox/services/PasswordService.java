@@ -76,16 +76,20 @@ public class PasswordService {
         return passwords;
     }
 
-//    public CosmosItemResponse delete(String id) {
-//        try (CosmosDbFactory factory = new CosmosDbFactory(CosmosDbSettings.getInstance().getEndpoint(), CosmosDbSettings.getInstance().getKey())) {
-//
-//            CosmosContainer container = factory.getContainer(CosmosDbSettings.getInstance().getDatabaseName(), CosmosDbSettings.getInstance().getContainerName());
-//
-//            CosmosItemRequestOptions opt = new CosmosItemRequestOptions()
-//                    .
-//            container.deleteItem(UUID.fromString(id), new PartitionKey(CosmosDbSettings.getInstance().getPartitionKey()),)
-//
-//        }
-//    }
+    public CosmosItemResponse<Object> delete(String id) {
+
+        CosmosItemResponse<Object> itemResponse;
+        try (CosmosDbFactory factory = new CosmosDbFactory(CosmosDbSettings.getInstance().getEndpoint(), CosmosDbSettings.getInstance().getKey())) {
+
+            CosmosContainer container = factory.getContainer(CosmosDbSettings.getInstance().getDatabaseName(), CosmosDbSettings.getInstance().getContainerName());
+
+            CosmosItemRequestOptions opt = new CosmosItemRequestOptions()
+                    .setConsistencyLevel(ConsistencyLevel.EVENTUAL);
+
+            itemResponse = container.deleteItem(id, new PartitionKey(CosmosDbSettings.getInstance().getPartitionKey()), opt);
+        }
+
+        return itemResponse;
+    }
 }
 
