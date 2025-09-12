@@ -10,10 +10,9 @@ import org.com.ivangeorgiev.lockbox.models.Password;
 import org.com.ivangeorgiev.lockbox.models.PasswordDto;
 import org.com.ivangeorgiev.lockbox.services.PasswordService;
 import org.com.ivangeorgiev.lockbox.utils.HttpResponseMessageFactory;
+import org.com.ivangeorgiev.lockbox.utils.PasswordValidator;
 
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class CreatePasswordFunc {
 
@@ -41,11 +40,7 @@ public class CreatePasswordFunc {
                 || (password.getTitle() == null || password.getTitle().isEmpty()))
             return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, "Missing parameters!", null);
 
-        String emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
-        Pattern pattern = Pattern.compile(emailRegex);
-        Matcher matcher = pattern.matcher(password.getEmail());
-
-        if (!matcher.matches())
+        if (PasswordValidator.validateEmail(password.getEmail()))
             return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, "Invalid email format!", null);
 
         PasswordService service = new PasswordService();
