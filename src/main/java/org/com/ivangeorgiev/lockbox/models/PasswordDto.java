@@ -1,5 +1,8 @@
 package org.com.ivangeorgiev.lockbox.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class PasswordDto {
     private String id;
     private String title;
