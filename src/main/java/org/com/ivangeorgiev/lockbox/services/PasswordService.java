@@ -2,10 +2,7 @@ package org.com.ivangeorgiev.lockbox.services;
 
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.models.CosmosItemRequestOptions;
-import com.azure.cosmos.models.CosmosItemResponse;
-import com.azure.cosmos.models.CosmosQueryRequestOptions;
-import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.*;
 import com.azure.security.keyvault.keys.cryptography.CryptographyClient;
 import com.azure.security.keyvault.keys.cryptography.models.DecryptResult;
 import com.azure.security.keyvault.keys.cryptography.models.EncryptResult;
@@ -13,6 +10,7 @@ import org.com.ivangeorgiev.lockbox.factory.CosmosDbFactory;
 import org.com.ivangeorgiev.lockbox.factory.CryptographyClientFactory;
 import org.com.ivangeorgiev.lockbox.models.Password;
 import org.com.ivangeorgiev.lockbox.models.PasswordDto;
+import org.com.ivangeorgiev.lockbox.models.UpdatePasswordDto;
 import org.com.ivangeorgiev.lockbox.utils.CosmosDbSettings;
 import org.com.ivangeorgiev.lockbox.utils.KeyVaultSettings;
 
@@ -90,6 +88,46 @@ public class PasswordService {
         }
 
         return itemResponse;
+    }
+
+    public CosmosItemResponse<Password> update(String id, UpdatePasswordDto password) {
+
+        CosmosItemResponse<Password> updatedPassword;
+        try (CosmosDbFactory factory = new CosmosDbFactory(CosmosDbSettings.getInstance().getEndpoint(), CosmosDbSettings.getInstance().getKey())) {
+
+            CosmosPatchOperations operations = updateItemProps(password);
+
+            PartitionKey partitionKey = new PartitionKey(CosmosDbSettings.getInstance().getPartitionKey());
+
+            CosmosPatchItemRequestOptions opt = new CosmosPatchItemRequestOptions();
+            opt.setContentResponseOnWriteEnabled(true);
+            opt.setConsistencyLevel(ConsistencyLevel.EVENTUAL);
+
+            CosmosContainer container = factory.getContainer(CosmosDbSettings.getInstance().getDatabaseName(), CosmosDbSettings.getInstance().getContainerName());
+
+            updatedPassword = container.patchItem(id, partitionKey, operations, opt, Password.class);
+        }
+
+        return updatedPassword;
+    }
+
+    private CosmosPatchOperations updateItemProps(UpdatePasswordDto password) {
+        CosmosPatchOperations operations = CosmosPatchOperations.create();
+
+        if (password.getTitle() != null) operations.set("/title", password.getTitle());
+        if (password.getUsername() != null) operations.set("/username", password.getTitle());
+        if (password.getEmail() != null) operations.set("/email", password.getEmail());
+        if (password.getPassword() != null) {
+
+            CryptographyClient cryptoClient = CryptographyClientFactory.create(KeyVaultSettings.getInstance().getKeyId());
+
+            EncryptResult res = cryptoClient.encrypt(KeyVaultSettings.getInstance().getEncryptionAlgorithm(), password.getPassword().getBytes());
+            String str = Base64.getEncoder().encodeToString(res.getCipherText());
+
+            operations.set("/password", str);
+        }
+
+        return operations;
     }
 }
 
