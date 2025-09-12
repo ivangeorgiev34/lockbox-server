@@ -31,6 +31,6 @@ public class DeletePasswordFunc {
         if (itemResponse.getStatusCode() != HttpStatus.NO_CONTENT.value())
             return HttpResponseMessageFactory.create(request, HttpStatus.valueOf(itemResponse.getStatusCode()), false, "Password could not be created", null);
 
-        return HttpResponseMessageFactory.create(request, HttpStatus.valueOf(itemResponse.getStatusCode()), true, "Password deleted successfully", null);
+        return HttpResponseMessageFactory.create(request, HttpStatus.OK, true, "Password deleted successfully", null);
     }
 }
