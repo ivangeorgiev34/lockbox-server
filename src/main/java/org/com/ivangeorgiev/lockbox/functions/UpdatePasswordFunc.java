@@ -11,6 +11,7 @@ import com.microsoft.azure.functions.annotation.HttpTrigger;
 import org.com.ivangeorgiev.lockbox.factory.CryptographyClientFactory;
 import org.com.ivangeorgiev.lockbox.models.Password;
 import org.com.ivangeorgiev.lockbox.models.PasswordDto;
+import org.com.ivangeorgiev.lockbox.models.UpdatePasswordDto;
 import org.com.ivangeorgiev.lockbox.services.PasswordService;
 import org.com.ivangeorgiev.lockbox.utils.HttpResponseMessageFactory;
 import org.com.ivangeorgiev.lockbox.utils.KeyVaultSettings;
@@ -20,41 +21,37 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
 
-public class CreatePasswordFunc {
-
-    @FunctionName("CreatePasswordFunc")
+public class UpdatePasswordFunc {
+    @FunctionName("UpdatePasswordFunc")
     public HttpResponseMessage run(
-            @HttpTrigger(name = "req", methods = {HttpMethod.POST}, authLevel = AuthorizationLevel.ANONYMOUS)
-            HttpRequestMessage<Optional<String>> request,
+            @HttpTrigger(name = "req", methods = {HttpMethod.PATCH}, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
             final ExecutionContext context) {
 
-        if (!request.getBody().isPresent())
-            return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, "No body provided!", null);
+        String id = request.getQueryParameters().get("id");
 
-        String body = request.getBody().get();
+        if (id == null || id.isEmpty())
+            return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, "No password id provided", null);
+
+        if (!request.getBody().isPresent())
+            return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, "No body provided", null);
+
         ObjectMapper mapper = new ObjectMapper();
 
-        Password password;
+        UpdatePasswordDto reqBody;
         try {
-            password = mapper.readValue(body, Password.class);
+            reqBody = mapper.readValue(request.getBody().get(), UpdatePasswordDto.class);
         } catch (Exception ex) {
             return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, ex.getMessage(), null);
         }
 
-        if ((password.getPassword() == null || password.getPassword().isEmpty())
-                || (password.getEmail() == null || password.getEmail().isEmpty())
-                || (password.getTitle() == null || password.getTitle().isEmpty()
-                || (password.getUsername() == null || password.getUsername().isEmpty())))
-            return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, "Missing parameters!", null);
-
-        if (!PasswordValidator.validateEmail(password.getEmail()))
-            return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, "Invalid email format!", null);
+        if (reqBody.getEmail() != null && !PasswordValidator.validateEmail(reqBody.getEmail()))
+            return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, "Invalid email format", null);
 
         PasswordService service = new PasswordService();
-        CosmosItemResponse<Password> itemResponse = service.create(password);
+        CosmosItemResponse<Password> itemResponse = service.update(id, reqBody);
 
-        if (itemResponse.getStatusCode() != HttpStatus.CREATED.value())
-            return HttpResponseMessageFactory.create(request, HttpStatus.valueOf(itemResponse.getStatusCode()), false, "Password could not be created", null);
+        if (itemResponse.getStatusCode() != HttpStatus.OK.value())
+            return HttpResponseMessageFactory.create(request, HttpStatus.INTERNAL_SERVER_ERROR, false, "Password couldn't be updated", null);
 
         Password passwordItemResponse = itemResponse.getItem();
 
@@ -64,6 +61,6 @@ public class CreatePasswordFunc {
 
         PasswordDto dto = mapper.convertValue(passwordItemResponse, PasswordDto.class);
 
-        return HttpResponseMessageFactory.create(request, HttpStatus.CREATED, true, "Password created successfully", dto);
+        return HttpResponseMessageFactory.create(request, HttpStatus.valueOf(itemResponse.getStatusCode()), true, "Password updated successfully", dto);
     }
 }
