@@ -43,7 +43,8 @@ public class CreatePasswordFunc {
 
         if ((password.getPassword() == null || password.getPassword().isEmpty())
                 || (password.getEmail() == null || password.getEmail().isEmpty())
-                || (password.getTitle() == null || password.getTitle().isEmpty()))
+                || (password.getTitle() == null || password.getTitle().isEmpty()
+                || (password.getUsername() == null || password.getUsername().isEmpty())))
             return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, "Missing parameters!", null);
 
         if (!PasswordValidator.validateEmail(password.getEmail()))
