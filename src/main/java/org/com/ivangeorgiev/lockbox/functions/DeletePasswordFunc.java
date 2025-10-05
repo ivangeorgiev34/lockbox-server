@@ -5,7 +5,9 @@ import com.microsoft.azure.functions.*;
 import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
+import org.com.ivangeorgiev.lockbox.services.CacheService;
 import org.com.ivangeorgiev.lockbox.services.PasswordService;
+import org.com.ivangeorgiev.lockbox.utils.GlobalConstants;
 import org.com.ivangeorgiev.lockbox.utils.HttpResponseMessageFactory;
 
 import java.util.Optional;
@@ -30,6 +32,8 @@ public class DeletePasswordFunc {
 
         if (itemResponse.getStatusCode() != HttpStatus.NO_CONTENT.value())
             return HttpResponseMessageFactory.create(request, HttpStatus.valueOf(itemResponse.getStatusCode()), false, "Password could not be created", null);
+
+        CacheService.invalidate(GlobalConstants.CACHE_PASSWORDS_KEY);
 
         return HttpResponseMessageFactory.create(request, HttpStatus.OK, true, "Password deleted successfully", null);
     }

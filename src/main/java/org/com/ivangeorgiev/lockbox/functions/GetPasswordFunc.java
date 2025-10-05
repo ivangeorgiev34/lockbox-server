@@ -13,12 +13,16 @@ import com.microsoft.azure.functions.annotation.HttpTrigger;
 import org.com.ivangeorgiev.lockbox.factory.CosmosDbFactory;
 import org.com.ivangeorgiev.lockbox.factory.CryptographyClientFactory;
 import org.com.ivangeorgiev.lockbox.models.PasswordDto;
+import org.com.ivangeorgiev.lockbox.services.CacheService;
 import org.com.ivangeorgiev.lockbox.utils.CosmosDbSettings;
+import org.com.ivangeorgiev.lockbox.utils.GlobalConstants;
 import org.com.ivangeorgiev.lockbox.utils.HttpResponseMessageFactory;
 import org.com.ivangeorgiev.lockbox.utils.KeyVaultSettings;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 public class GetPasswordFunc {
@@ -32,6 +36,16 @@ public class GetPasswordFunc {
 
         if (passwordId == null || passwordId.isEmpty())
             return HttpResponseMessageFactory.create(request, HttpStatus.BAD_REQUEST, false, "Please provide password id", null);
+
+        List<PasswordDto> passwords = CacheService.get(GlobalConstants.CACHE_PASSWORDS_KEY);
+        Optional<PasswordDto> passwordCached = Optional.ofNullable(passwords)
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .filter(x -> x.getId().equals(passwordId))
+                .findFirst();
+
+        if (passwordCached.isPresent())
+            return HttpResponseMessageFactory.create(request, HttpStatus.OK, true, "Password retrieved", passwordCached);
 
         CosmosItemResponse<PasswordDto> itemResponse;
         try (CosmosDbFactory factory = new CosmosDbFactory(CosmosDbSettings.getInstance().getEndpoint(), CosmosDbSettings.getInstance().getKey())) {

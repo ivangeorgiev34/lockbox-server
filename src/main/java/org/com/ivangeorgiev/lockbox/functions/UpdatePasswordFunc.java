@@ -12,7 +12,9 @@ import org.com.ivangeorgiev.lockbox.factory.CryptographyClientFactory;
 import org.com.ivangeorgiev.lockbox.models.Password;
 import org.com.ivangeorgiev.lockbox.models.PasswordDto;
 import org.com.ivangeorgiev.lockbox.models.UpdatePasswordDto;
+import org.com.ivangeorgiev.lockbox.services.CacheService;
 import org.com.ivangeorgiev.lockbox.services.PasswordService;
+import org.com.ivangeorgiev.lockbox.utils.GlobalConstants;
 import org.com.ivangeorgiev.lockbox.utils.HttpResponseMessageFactory;
 import org.com.ivangeorgiev.lockbox.utils.KeyVaultSettings;
 import org.com.ivangeorgiev.lockbox.utils.PasswordValidator;
@@ -60,6 +62,8 @@ public class UpdatePasswordFunc {
         passwordItemResponse.setPassword(new String(res.getPlainText(), StandardCharsets.UTF_8));
 
         PasswordDto dto = mapper.convertValue(passwordItemResponse, PasswordDto.class);
+
+        CacheService.invalidate(GlobalConstants.CACHE_PASSWORDS_KEY);
 
         return HttpResponseMessageFactory.create(request, HttpStatus.valueOf(itemResponse.getStatusCode()), true, "Password updated successfully", dto);
     }
