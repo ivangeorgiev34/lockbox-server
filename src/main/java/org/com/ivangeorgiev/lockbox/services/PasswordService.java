@@ -115,7 +115,7 @@ public class PasswordService {
         CosmosPatchOperations operations = CosmosPatchOperations.create();
 
         if (password.getTitle() != null) operations.set("/title", password.getTitle());
-        if (password.getUsername() != null) operations.set("/username", password.getTitle());
+        if (password.getUsername() != null) operations.set("/username", password.getUsername());
         if (password.getEmail() != null) operations.set("/email", password.getEmail());
         if (password.getPassword() != null) {
 
